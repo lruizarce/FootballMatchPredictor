@@ -1,10 +1,9 @@
-from typing import List, Tuple, Optional, cast
-
+from typing import List, Tuple, Optional
 import numpy as np
 from numpy import float64
 from numpy.typing import NDArray
-from sklearn.ensemble import RandomForestRegressor  # type: ignore
-from sklearn.preprocessing import OneHotEncoder  # type: ignore
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import OneHotEncoder
 
 from matchpredictor.matchresults.result import Fixture, Outcome, Result, Team
 from matchpredictor.predictors.predictor import Predictor, Prediction
@@ -19,12 +18,10 @@ class RandomForestPredictor(Predictor):
         encoded_home_name = self.__encode_team(fixture.home_team)
         encoded_away_name = self.__encode_team(fixture.away_team)
         
-        if encoded_home_name is None:
-            return Prediction(outcome=Outcome.AWAY)
-        if encoded_away_name is None:
-            return Prediction(outcome=Outcome.HOME)
+        if encoded_home_name is None or encoded_away_name is None:
+            return Prediction(outcome=Outcome.DRAW)
         
-        x: NDArray[float64] = np.concatenate([encoded_home_name, encoded_away_name], 1)
+        x: NDArray[float64] = np.concatenate([encoded_home_name, encoded_away_name], axis=1)
         pred = self.model.predict(x)
 
         if pred > 0:
@@ -41,8 +38,9 @@ class RandomForestPredictor(Predictor):
         except ValueError:
             return None
 
-
-    def build_model(results: List[Result]) -> Tuple[RandomForestRegressor, OneHotEncoder]:
+# Fix the indentation of this function and add the "self" parameter to use class methods
+    @classmethod
+    def build_model(cls, results: List[Result]) -> Tuple[RandomForestRegressor, OneHotEncoder]:
         home_names = np.array([r.fixture.home_team.name for r in results])
         away_names = np.array([r.fixture.away_team.name for r in results])
         home_goals = np.array([r.home_goals for r in results])
@@ -54,16 +52,17 @@ class RandomForestPredictor(Predictor):
         encoded_home_names = team_encoding.transform(home_names.reshape(-1, 1))
         encoded_away_names = team_encoding.transform(away_names.reshape(-1, 1))
 
-        x: NDArray[float64] = np.concatenate([encoded_home_names, encoded_away_names], 1)
+        x: NDArray[float64] = np.concatenate([encoded_home_names, encoded_away_names], axis=1)
         y = np.sign(home_goals - away_goals)
 
-        model = RandomForestRegressor(penalty="l2", fit_intercept=False, multi_class="ovr", C=1)
+        model = RandomForestRegressor(n_estimators=100, random_state=0)  # Adjust parameters as needed
         model.fit(x, y)
 
         return model, team_encoding
 
+# Use the class method to create an instance of the predictor
+    @classmethod
+    def train_random_forest_regression_predictor(cls, results: List[Result]) -> Predictor:
+        model, team_encoding = cls.build_model(results)
 
-    def train_random_forest_regression_predictor(results: List[Result]) -> Predictor:
-        model, team_encoding = build_model(results)
-
-        return RandomForestRegressor(model, team_encoding)
+        return cls(model, team_encoding)
