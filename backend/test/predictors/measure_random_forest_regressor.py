@@ -14,4 +14,4 @@ class TestRandomForestRegressorPredictor(TestCase):
 
         accuracy, _ = Evaluator(predictor).measure_accuracy(validation_data)
 
-        self.assertGreaterEqual(accuracy, .33)
+        self.assertGreaterEqual(accuracy, .4)
