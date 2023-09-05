@@ -6,6 +6,10 @@ from numpy.typing import NDArray
 from sklearn.linear_model import LogisticRegression  # type: ignore
 from sklearn.preprocessing import OneHotEncoder  # type: ignore
 
+
+from warnings import simplefilter
+simplefilter(action='ignore', category=FutureWarning)
+
 from matchpredictor.matchresults.result import Fixture, Outcome, Result, Team
 from matchpredictor.predictors.predictor import Predictor, Prediction
 
