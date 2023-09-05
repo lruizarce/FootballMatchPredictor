@@ -21,7 +21,7 @@ class RandomForestPredictor(Predictor):
         if encoded_home_name is None or encoded_away_name is None:
             return Prediction(outcome=Outcome.DRAW)
         
-        x: NDArray[float64] = np.concatenate([encoded_home_name, encoded_away_name], axis=1)
+        x: NDArray[float64] = np.concatenate([encoded_home_name, encoded_away_name], 1)
         pred = self.model.predict(x)
 
         if pred > 0:
@@ -37,8 +37,7 @@ class RandomForestPredictor(Predictor):
             return result
         except ValueError:
             return None
-
-# Fix the indentation of this function and add the "self" parameter to use class methods
+        
     @classmethod
     def build_model(cls, results: List[Result]) -> Tuple[RandomForestRegressor, OneHotEncoder]:
         home_names = np.array([r.fixture.home_team.name for r in results])
@@ -55,12 +54,12 @@ class RandomForestPredictor(Predictor):
         x: NDArray[float64] = np.concatenate([encoded_home_names, encoded_away_names], axis=1)
         y = np.sign(home_goals - away_goals)
 
-        model = RandomForestRegressor(n_estimators=100, random_state=0)  # Adjust parameters as needed
+        model = RandomForestRegressor(n_estimators=1000, random_state=42, criterion="friedman_mse")  
         model.fit(x, y)
 
         return model, team_encoding
 
-# Use the class method to create an instance of the predictor
+
     @classmethod
     def train_random_forest_regression_predictor(cls, results: List[Result]) -> Predictor:
         model, team_encoding = cls.build_model(results)
